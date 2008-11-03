@@ -1,0 +1,25 @@
+Name:           mailinglistconfirm
+Version:        0.1
+Description:    CGI script to handle 'confirmation' links for a requested mailing list
+License:        BSD3
+License-file:   LICENSE
+Author:         Luke Plant
+Maintainer:     L.Plant.98@cantab.net
+Cabal-Version:  >= 1.2
+Build-Type:     Simple
+
+Executable confirm.cgi
+  Build-Depends:
+        base,
+        haskell98,
+        HDBC-sqlite3,
+        HDBC,
+        containers,
+        utf8-string,
+        regex-pcre,
+        regex-base,
+        xhtml,
+        bytestring,
+        ella
+  Main-is: ConfirmCgi.hs
+  hs-source-dirs: src
