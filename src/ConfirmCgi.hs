@@ -4,7 +4,6 @@ import Ella.Response
 import Ella.Processors.General (addSlashRedirectView)
 
 import Control.Exception (catchDyn)
-import Control.Monad (when)
 import Database.HDBC (quickQuery, toSql, SqlError, commit)
 import Database.HDBC.Sqlite3 (connectSqlite3)
 
