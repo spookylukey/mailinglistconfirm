@@ -16,9 +16,6 @@ Executable confirm.cgi
         HDBC,
         containers,
         utf8-string,
-        regex-pcre,
-        regex-base,
-        xhtml,
         bytestring,
         ella
   Main-is: ConfirmCgi.hs
