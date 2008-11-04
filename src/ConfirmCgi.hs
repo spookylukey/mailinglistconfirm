@@ -53,9 +53,11 @@ views = [ addSlashRedirectView
 
 -- Views
 
-idNotFoundResponse = buildResponse [addContent "Sorry, the URL entered does not correspond to any known email address.  Please check you entered the full URL."] utf8HtmlResponse
-addedResponse = buildResponse [addContent "Thanks, I'll add you to my list."] utf8HtmlResponse
-removedResponse = buildResponse [addContent "Thanks, you won't be added you to my list."] utf8HtmlResponse
+message content = buildResponse [addContent content] utf8HtmlResponse
+
+idNotFoundResponse = message "Sorry, the URL entered does not correspond to any known email address.  Please check you entered the full URL."
+addedResponse      = message "Thanks, I'll add you to my list."
+removedResponse    = message "Thanks, you won't be added you to my list."
 
 addEmailView personid req = do
   updated <- confirm personid
@@ -75,4 +77,3 @@ main :: IO ()
 main = catchDyn (do
                   dispatchCGI views dispatchOptions
                 ) sqlErrorHandler
-
