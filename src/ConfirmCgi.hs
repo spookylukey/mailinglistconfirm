@@ -71,9 +71,9 @@ removeEmailView personid req = do
                     then idNotFoundResponse
                     else removedResponse
 
-dispatchOptions = defaultDispatchOptions
+-- Main
 
 main :: IO ()
 main = catchDyn (do
-                  dispatchCGI views dispatchOptions
+                  dispatchCGI views defaultDispatchOptions
                 ) sqlErrorHandler
