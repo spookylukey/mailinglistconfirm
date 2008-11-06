@@ -77,6 +77,13 @@ removeEmailView personid req = do
 -- -- Admin URLs
 
 
+-- Utilities
+
+randomStr :: Int -> IO String
+randomStr n = do
+    g <- newStdGen
+    return $ take n (randomRs chars g)
+  where chars = ('a','z')
 
 -- Main
 
