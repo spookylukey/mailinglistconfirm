@@ -7,6 +7,7 @@ import Control.Exception (catchDyn)
 import Database.HDBC (quickQuery, toSql, SqlError, commit)
 import Database.HDBC.Sqlite3 (connectSqlite3)
 
+import Random (randomRs, newStdGen)
 -- Settings
 
 sqlite_path = "/home/luke/httpd/lukeplant.me.uk/web/cgi-bin/data/addresses.db"
@@ -47,8 +48,8 @@ sqlErrorHandler = \e -> do
 -- Routing
 
 views = [ addSlashRedirectView
-        , "yes/" <+/> stringParam            //->  addEmailView    $ []
-        , "no/" <+/> stringParam             //->  removeEmailView $ []
+        , "yes/" <+/> stringParam            //->  confirmEmailView  $ []
+        , "no/" <+/> stringParam             //->  removeEmailView   $ []
         ]
 
 -- Views
@@ -59,7 +60,9 @@ idNotFoundResponse = message "Sorry, the URL entered does not correspond to any 
 addedResponse      = message "Thanks, I'll add you to my list."
 removedResponse    = message "Thanks, you won't be added you to my list."
 
-addEmailView personid req = do
+-- -- Clickable URLs
+
+confirmEmailView personid req = do
   updated <- confirm personid
   return $ Just $ if (not updated)
                     then idNotFoundResponse
@@ -70,6 +73,10 @@ removeEmailView personid req = do
   return $ Just $ if (not updated)
                     then idNotFoundResponse
                     else removedResponse
+
+-- -- Admin URLs
+
+
 
 -- Main
 
