@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fglasgow-exts -XOverloadedStrings #-}
 import Ella.Framework
+import Ella.Request (getPOST)
 import Ella.Response
 import Ella.Processors.General (addSlashRedirectView)
 
@@ -8,9 +9,11 @@ import Database.HDBC (quickQuery, toSql, SqlError, commit)
 import Database.HDBC.Sqlite3 (connectSqlite3)
 
 import Random (randomRs, newStdGen)
+
 -- Settings
 
 sqlite_path = "/home/luke/httpd/lukeplant.me.uk/web/cgi-bin/data/addresses.db"
+access_password = "mypassword"
 
 -- Database
 
@@ -50,15 +53,35 @@ sqlErrorHandler = \e -> do
 views = [ addSlashRedirectView
         , "yes/" <+/> stringParam            //->  confirmEmailView  $ []
         , "no/" <+/> stringParam             //->  removeEmailView   $ []
+        , "add/" <+/> empty                  //->  addEntryView      $ [passwordRequired]
         ]
 
 -- Views
 
+-- -- Utilities
+
 message content = buildResponse [addContent content] utf8HtmlResponse
 
-idNotFoundResponse = message "Sorry, the URL entered does not correspond to any known email address.  Please check you entered the full URL."
-addedResponse      = message "Thanks, I'll add you to my list."
-removedResponse    = message "Thanks, you won't be added you to my list."
+idNotFoundResponse = message "Sorry, the URL entered does not correspond to any known email address.  Please check you entered the full URL.\n"
+addedResponse      = message "Thanks, I'll add you to my list.\n"
+removedResponse    = message "Thanks, you won't be added you to my list.\n"
+
+forbidden content = buildResponse [setStatus 403,
+                                   addContent content] utf8HtmlResponse
+accessDenied = forbidden "Access denied\n"
+
+-- -- Decorators
+
+-- | Decorator that enforces a POST parameter 'password' to be present
+-- and correct
+passwordRequired :: View -> View
+passwordRequired view req = do
+  let password = getPOST "password" req
+  case password of
+    Nothing -> return ad
+    Just pw | pw == access_password -> view req
+            | otherwise -> return ad
+ where ad = Just accessDenied
 
 -- -- Clickable URLs
 
@@ -76,6 +99,8 @@ removeEmailView personid req = do
 
 -- -- Admin URLs
 
+addEntryView req = do
+  return $ Just $ message "Not implemented!"
 
 -- Utilities
 
