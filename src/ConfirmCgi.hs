@@ -19,24 +19,24 @@ access_password = "mypassword"
 
 connect = connectSqlite3 sqlite_path
 
-updateStatusStmnt = "UPDATE addresses SET send_email = ? WHERE id = ?;"
+updateStatusByIdStmnt = "UPDATE addresses SET send_email = ? WHERE id = ?;"
 queryByIdStmnt  = "SELECT email FROM addresses WHERE id = ?;"
 insertEntryStmnt = "INSERT INTO addresses (name, email, id) VALUES (?, ?, ?);"
 
-update :: Bool -> String -> IO Bool
-update addthem personid = do
+updateById :: Bool -> String -> IO Bool
+updateById addthem personid = do
   conn <- connect
   retval <- idpresent conn personid
   if retval
     then do
-      quickQuery conn updateStatusStmnt [toSql addthem, toSql personid]
+      quickQuery conn updateStatusByIdStmnt [toSql addthem, toSql personid]
       commit conn
       return retval
     else do
       return retval
 
-confirm = update True
-remove = update False
+confirmById = updateById True
+removeById = updateById False
 
 idpresent conn personid = do
   vals <- quickQuery conn queryByIdStmnt [toSql personid]
@@ -58,8 +58,8 @@ sqlErrorHandler = \e -> do
 -- Routing
 
 views = [ addSlashRedirectView
-        , "yes/" <+/> stringParam            //->  confirmEmailView  $ []
-        , "no/" <+/> stringParam             //->  removeEmailView   $ []
+        , "yes/" <+/> stringParam            //->  confirmIdView  $ []
+        , "no/" <+/> stringParam             //->  removeIdView   $ []
         , "add/" <+/> empty                  //->  addEntryView      $ [passwordRequired]
         ]
 
@@ -95,14 +95,14 @@ passwordRequired view req = do
 
 -- -- Clickable URLs
 
-confirmEmailView personid req = do
-  updated <- confirm personid
+confirmIdView personid req = do
+  updated <- confirmById personid
   return $ Just $ if (not updated)
                     then idNotFoundResponse
                     else addedResponse
 
-removeEmailView personid req = do
-  updated <- remove personid
+removeIdView personid req = do
+  updated <- removeById personid
   return $ Just $ if (not updated)
                     then idNotFoundResponse
                     else removedResponse
