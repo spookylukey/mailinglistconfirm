@@ -7,7 +7,7 @@ import Ella.Processors.General (addSlashRedirectView)
 import Control.Exception (catchDyn)
 import Database.HDBC (quickQuery, toSql, SqlError, commit)
 import Database.HDBC.Sqlite3 (connectSqlite3)
-
+import Maybe (isNothing)
 import Random (randomRs, newStdGen)
 
 -- Settings
@@ -21,6 +21,7 @@ connect = connectSqlite3 sqlite_path
 
 updateStatusStmnt = "UPDATE addresses SET send_email = ? WHERE id = ?;"
 queryByIdStmnt  = "SELECT email FROM addresses WHERE id = ?;"
+insertEntryStmnt = "INSERT INTO addresses (name, email, id) VALUES (?, ?, ?);"
 
 update :: Bool -> String -> IO Bool
 update addthem personid = do
@@ -40,6 +41,12 @@ remove = update False
 idpresent conn personid = do
   vals <- quickQuery conn queryByIdStmnt [toSql personid]
   return (length vals == 1)
+
+addEntry name email = do
+  conn <- connect
+  newid <- randomStr 10
+  quickQuery conn insertEntryStmnt [toSql name, toSql email, toSql newid]
+  commit conn
 
 -- Error handling
 
@@ -69,6 +76,9 @@ removedResponse    = message "Thanks, you won't be added you to my list.\n"
 forbidden content = buildResponse [setStatus 403,
                                    addContent content] utf8HtmlResponse
 accessDenied = forbidden "Access denied\n"
+
+invalidInput content = buildResponse [ setStatus 400
+                                     , addContent content] utf8HtmlResponse
 
 -- -- Decorators
 
@@ -100,7 +110,13 @@ removeEmailView personid req = do
 -- -- Admin URLs
 
 addEntryView req = do
-  return $ Just $ message "Not implemented!"
+  let name  = getPOST "name" req
+      email = getPOST "email" req
+  if any isNothing [name, email]
+     then return $ Just $ invalidInput "Please provide 'name' and 'email' parameters\n"
+     else do
+       addEntry name email
+       return $ Just $ message "Added!\n"
 
 -- Utilities
 
