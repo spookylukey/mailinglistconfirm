@@ -58,8 +58,8 @@ sqlErrorHandler = \e -> do
 -- Routing
 
 views = [ addSlashRedirectView
-        , "yes/" <+/> stringParam            //->  confirmIdView  $ []
-        , "no/" <+/> stringParam             //->  removeIdView   $ []
+        , "yes/" <+/> stringParam            //->  confirmIdView     $ []
+        , "no/" <+/> stringParam             //->  removeIdView      $ []
         , "add/" <+/> empty                  //->  addEntryView      $ [passwordRequired]
         ]
 
