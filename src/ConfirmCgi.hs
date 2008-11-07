@@ -19,8 +19,8 @@ access_password = "mypassword"
 
 connect = connectSqlite3 sqlite_path
 
-updateStatement = "UPDATE addresses SET send_email = ? WHERE id = ?;"
-queryStatement  = "SELECT email FROM addresses WHERE id = ?;"
+updateStatusStmnt = "UPDATE addresses SET send_email = ? WHERE id = ?;"
+queryByIdStmnt  = "SELECT email FROM addresses WHERE id = ?;"
 
 update :: Bool -> String -> IO Bool
 update addthem personid = do
@@ -28,7 +28,7 @@ update addthem personid = do
   retval <- idpresent conn personid
   if retval
     then do
-      quickQuery conn updateStatement [toSql addthem, toSql personid]
+      quickQuery conn updateStatusStmnt [toSql addthem, toSql personid]
       commit conn
       return retval
     else do
@@ -38,7 +38,7 @@ confirm = update True
 remove = update False
 
 idpresent conn personid = do
-  vals <- quickQuery conn queryStatement [toSql personid]
+  vals <- quickQuery conn queryByIdStmnt [toSql personid]
   return (length vals == 1)
 
 -- Error handling
