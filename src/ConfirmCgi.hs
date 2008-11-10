@@ -4,10 +4,10 @@ import Ella.Request (getPOST)
 import Ella.Response
 import Ella.Processors.General (addSlashRedirectView)
 
-import Control.Exception (catchDyn)
-import Database.HDBC (quickQuery, toSql, SqlError, commit)
+import Control.Exception (catchDyn, throwDyn)
+import Database.HDBC (quickQuery, toSql, SqlError(SqlError), withTransaction)
 import Database.HDBC.Sqlite3 (connectSqlite3)
-import Maybe (isNothing)
+import Maybe (isNothing, fromJust)
 import Random (randomRs, newStdGen)
 
 -- Settings
@@ -20,8 +20,11 @@ access_password = "mypassword"
 connect = connectSqlite3 sqlite_path
 
 updateStatusByIdStmnt = "UPDATE addresses SET send_email = ? WHERE id = ?;"
+updateStatusByEmailStmnt = "UPDATE addresses SET send_email = ? WHERE email = ?;"
 queryByIdStmnt  = "SELECT email FROM addresses WHERE id = ?;"
+queryByEmailStmnt  = "SELECT email FROM addresses WHERE email = ?;"
 insertEntryStmnt = "INSERT INTO addresses (name, email, id) VALUES (?, ?, ?);"
+deleteEntryStmnt = "DELETE FROM addresses WHERE email = ?;"
 
 updateById :: Bool -> String -> IO Bool
 updateById addthem personid = do
@@ -29,8 +32,7 @@ updateById addthem personid = do
   retval <- idpresent conn personid
   if retval
     then do
-      quickQuery conn updateStatusByIdStmnt [toSql addthem, toSql personid]
-      commit conn
+      withTransaction conn (\c -> quickQuery c updateStatusByIdStmnt [toSql addthem, toSql personid])
       return retval
     else do
       return retval
@@ -42,11 +44,38 @@ idpresent conn personid = do
   vals <- quickQuery conn queryByIdStmnt [toSql personid]
   return (length vals == 1)
 
+emailpresent conn email = do
+  vals <- quickQuery conn queryByEmailStmnt [toSql email]
+  return (length vals == 1)
+
+addEntry :: String -> String -> IO ()
 addEntry name email = do
   conn <- connect
   newid <- randomStr 10
-  quickQuery conn insertEntryStmnt [toSql name, toSql email, toSql newid]
-  commit conn
+  withTransaction conn (\c ->
+                            quickQuery c insertEntryStmnt [toSql name, toSql email, toSql newid]
+                       )
+  return ()
+
+deleteEntry :: String -> IO ()
+deleteEntry email = do
+  conn <- connect
+  withTransaction conn (\c -> quickQuery c deleteEntryStmnt [toSql email])
+  return ()
+
+updateByEmail :: Bool -> String -> IO Bool
+updateByEmail addthem email = do
+  conn <- connect
+  retval <- emailpresent conn email
+  if retval
+    then do
+      withTransaction conn (\c -> quickQuery c updateStatusByEmailStmnt [toSql addthem, toSql email])
+      return retval
+    else do
+      return retval
+
+confirmByEmail = updateByEmail True
+removeByEmail = updateByEmail False
 
 -- Error handling
 
@@ -58,9 +87,14 @@ sqlErrorHandler = \e -> do
 -- Routing
 
 views = [ addSlashRedirectView
+        -- Public
         , "yes/" <+/> stringParam            //->  confirmIdView     $ []
         , "no/" <+/> stringParam             //->  removeIdView      $ []
+        -- Admin
         , "add/" <+/> empty                  //->  addEntryView      $ [passwordRequired]
+        , "delete/" <+/> empty               //->  deleteEntryView   $ [passwordRequired]
+        , "set/yes/" <+/> stringParam        //->  confirmEmailView  $ [passwordRequired]
+        , "set/no/" <+/> stringParam         //->  removeEmailView   $ [passwordRequired]
         ]
 
 -- Views
@@ -79,6 +113,8 @@ accessDenied = forbidden "Access denied\n"
 
 invalidInput content = buildResponse [ setStatus 400
                                      , addContent content] utf8HtmlResponse
+
+emailNotFoundResponse = invalidInput "Email address not found.\n"
 
 -- -- Decorators
 
@@ -115,8 +151,28 @@ addEntryView req = do
   if any isNothing [name, email]
      then return $ Just $ invalidInput "Please provide 'name' and 'email' parameters\n"
      else do
-       addEntry name email
+       addEntry (fromJust name) (fromJust email)
        return $ Just $ message "Added!\n"
+
+deleteEntryView req = do
+  let email = getPOST "email" req
+  if isNothing email
+     then return $ Just $ invalidInput "Please provide 'email' parameter"
+     else do
+       deleteEntry (fromJust email)
+       return $ Just $ message "Entry removed!\n"
+
+confirmEmailView email req = do
+  updated <- confirmByEmail email
+  return $ Just $ if (not updated)
+                    then emailNotFoundResponse
+                    else message "Email added to mailing list.\n"
+
+removeEmailView email req = do
+  updated <- removeByEmail email
+  return $ Just $ if (not updated)
+                    then emailNotFoundResponse
+                    else message "Email removed from mailing list.\n"
 
 -- Utilities
 
