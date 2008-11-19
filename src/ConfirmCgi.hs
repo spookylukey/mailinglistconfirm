@@ -1,4 +1,28 @@
 {-# OPTIONS_GHC -fglasgow-exts -XOverloadedStrings #-}
+---
+--- A simple CGI app designed to handle a personal mailing list
+---
+--- The public interface is simply 'yes' and 'no' links in emails.
+--- Anyone invited to the list needs to be sent an email with
+--- appropriate URLs for them to click.  These URLs are of the form
+---
+--- http://something.com/yes/<id>/
+---
+--- and
+---
+--- http://something.com/no/<id>/
+---
+--- where <id> is a random alphanumeric id stored in the DB.
+---
+--- The 'admin' interface consists of URLs that can be posted to (with
+--- an appropriate password) to add/remove entries from the database,
+--- or just confirm/remove those entries from being on the list.  It
+--- is intended that this interface is accessed using curl or a
+--- similar utility -- there is no HTML interface (yet).
+---
+--- For retrieving the list of 'yes' people, the only method currently
+--- is to download the SQLite database.
+
 import Ella.Framework
 import Ella.Request (getPOST)
 import Ella.Response
@@ -12,6 +36,7 @@ import Random (randomRs, newStdGen)
 
 -- Settings
 
+-- Change these!
 sqlite_path = "/home/luke/httpd/lukeplant.me.uk/web/cgi-bin/data/addresses.db"
 access_password = "mypassword"
 
