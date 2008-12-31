@@ -17,6 +17,6 @@ Executable confirm.cgi
         containers,
         utf8-string,
         bytestring,
-        ella
+        ella >= 0.1.2
   Main-is: ConfirmCgi.hs
   hs-source-dirs: src

@@ -147,7 +147,7 @@ emailNotFoundResponse = invalidInput "Email address not found.\n"
 -- and correct
 passwordRequired :: View -> View
 passwordRequired view req = do
-  let password = getPOST "password" req
+  let password = getPOST req "password"
   case password of
     Nothing -> return ad
     Just pw | pw == access_password -> view req
@@ -171,8 +171,8 @@ removeIdView personid req = do
 -- -- Admin URLs
 
 addEntryView req = do
-  let name  = getPOST "name" req
-      email = getPOST "email" req
+  let name  = getPOST req "name"
+      email = getPOST req "email"
   if any isNothing [name, email]
      then return $ Just $ invalidInput "Please provide 'name' and 'email' parameters\n"
      else do
@@ -180,7 +180,7 @@ addEntryView req = do
        return $ Just $ message "Added!\n"
 
 deleteEntryView req = do
-  let email = getPOST "email" req
+  let email = getPOST req "email"
   if isNothing email
      then return $ Just $ invalidInput "Please provide 'email' parameter"
      else do
