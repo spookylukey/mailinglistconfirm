@@ -51,6 +51,7 @@ queryByEmailStmnt  = "SELECT email FROM addresses WHERE email = ?;"
 insertEntryStmnt = "INSERT INTO addresses (name, email, id) VALUES (?, ?, ?);"
 deleteEntryStmnt = "DELETE FROM addresses WHERE email = ?;"
 
+-- | Updates the state of a person by ID.  Returns True if successful
 updateById :: Bool -> String -> IO Bool
 updateById addthem personid = do
   conn <- connect
@@ -62,17 +63,22 @@ updateById addthem personid = do
     else do
       return retval
 
+-- | Marks a person for inclusion in the list, given the ID
 confirmById = updateById True
+-- | Marks a person for exclusion from the list, given the ID
 removeById = updateById False
 
+-- | Checks whether an id is present in the database
 idpresent conn personid = do
   vals <- quickQuery conn queryByIdStmnt [toSql personid]
   return (length vals == 1)
 
+-- | Checks whether an e-mail is present in the database
 emailpresent conn email = do
   vals <- quickQuery conn queryByEmailStmnt [toSql email]
   return (length vals == 1)
 
+-- | Given a name and email, adds an entry to the database
 addEntry :: String -> String -> IO ()
 addEntry name email = do
   conn <- connect
@@ -82,12 +88,14 @@ addEntry name email = do
                        )
   return ()
 
+-- | Given an email, deletes an entry from the database
 deleteEntry :: String -> IO ()
 deleteEntry email = do
   conn <- connect
   withTransaction conn (\c -> quickQuery c deleteEntryStmnt [toSql email])
   return ()
 
+-- | Given a status and email, updates the persons status
 updateByEmail :: Bool -> String -> IO Bool
 updateByEmail addthem email = do
   conn <- connect
@@ -99,7 +107,9 @@ updateByEmail addthem email = do
     else do
       return retval
 
+-- | Marks a person for inclusion on the list, given an email
 confirmByEmail = updateByEmail True
+-- | Marks a person for exclusion from the list, given an email
 removeByEmail = updateByEmail False
 
 -- Error handling
@@ -154,7 +164,7 @@ passwordRequired view req = do
             | otherwise -> return ad
  where ad = Just accessDenied
 
--- -- Clickable URLs
+-- -- Public URLs
 
 confirmIdView personid req = do
   updated <- confirmById personid
