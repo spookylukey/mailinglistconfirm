@@ -177,7 +177,7 @@ addEntryView req = do
      then return $ Just $ invalidInput "Please provide 'name' and 'email' parameters\n"
      else do
        addEntry (fromJust name) (fromJust email)
-       return $ Just $ message "Added!\n"
+       return $ Just $ message "Entry added to database\n"
 
 deleteEntryView req = do
   let email = getPOST req "email"
@@ -185,7 +185,7 @@ deleteEntryView req = do
      then return $ Just $ invalidInput "Please provide 'email' parameter"
      else do
        deleteEntry (fromJust email)
-       return $ Just $ message "Entry removed!\n"
+       return $ Just $ message "Entry removed from database\n"
 
 confirmEmailView email req = do
   updated <- confirmByEmail email
